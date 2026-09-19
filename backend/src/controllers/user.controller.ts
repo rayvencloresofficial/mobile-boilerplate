@@ -39,9 +39,9 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response, next
 
 export const createUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, first_name, last_name, is_active, role_ids } = req.body;
+    const { email, phone_number, password, display_name, is_active, role_ids } = req.body;
     const created = await userService.createUser(
-      { email, password, first_name, last_name, is_active },
+      { email, phone_number, password, display_name, is_active },
       role_ids
     );
 
@@ -60,11 +60,11 @@ export const createUser = async (req: AuthenticatedRequest, res: Response, next:
 export const updateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params as { id: string };
-    const { email, password, first_name, last_name, is_active, role_ids } = req.body;
+    const { email, phone_number, password, display_name, is_active, role_ids } = req.body;
 
     const updated = await userService.updateUser(
       id,
-      { email, password, first_name, last_name, is_active },
+      { email, phone_number, password, display_name, is_active },
       role_ids
     );
 

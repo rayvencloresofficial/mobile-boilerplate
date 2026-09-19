@@ -34,7 +34,23 @@ export const register = async (req: AuthenticatedRequest, res: Response, next: N
   } catch (error) {
     next(error);
   }
-};  
+};
+
+export const syncFirebaseUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await authService.syncFirebaseUser(req.body);
+
+    const response: ApiResponse<typeof result> = {
+      success: true,
+      data: result,
+      message: 'Firebase user synced successfully.',
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const refresh = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -117,4 +133,66 @@ export const demoLogin = async (req: AuthenticatedRequest, res: Response, next: 
     next(error);
   }
 };
+
+export const updateProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+
+    const updatedUser = await authService.updateProfile(req.user.id, req.body);
+    const response: ApiResponse<typeof updatedUser> = {
+      success: true,
+      data: updatedUser,
+      message: 'Profile updated successfully.',
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    await authService.changePassword(req.user.id, currentPassword, newPassword);
+
+    const response: ApiResponse<null> = {
+      success: true,
+      message: 'Password changed successfully.',
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAccount = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+
+    await authService.deleteAccount(req.user.id);
+
+    const response: ApiResponse<null> = {
+      success: true,
+      message: 'Account deleted successfully.',
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 

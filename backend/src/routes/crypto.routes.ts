@@ -19,14 +19,14 @@ router.use(authenticate);
 
 router.post(
   '/encrypt',
-  requirePermission('settings:manage'),
+  requirePermission('settings:update'),
   validateRequest({ body: encryptSchema }),
   cryptoController.encryptData
 );
 
 router.post(
   '/decrypt',
-  requirePermission('settings:manage'),
+  requirePermission('settings:update'),
   validateRequest({ body: decryptSchema }),
   cryptoController.decryptData
 );

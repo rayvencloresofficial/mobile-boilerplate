@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import { ConflictError, NotFoundError } from '../errors/AppError.js';
-import { encrypt, decrypt } from '../utils/crypto.util.js';
 import * as userRepository from '../repositories/user.repository.js';
 import type { UserSummary } from '../repositories/user.repository.js';
 
@@ -10,7 +9,6 @@ const hashPassword = async (password: string): Promise<string> => {
 
 const sanitizeUserSummary = (user: UserSummary): UserSummary => ({
   ...user,
-  phone_number: user.phone_number ? decrypt(user.phone_number) : null,
 });
 
 export const listUsers = async (limit = 50, offset = 0): Promise<UserSummary[]> => {
@@ -25,11 +23,12 @@ export const getUserById = async (id: string): Promise<UserSummary> => {
   }
   return sanitizeUserSummary({
     id: user.id,
+    firebase_uid: user.firebase_uid,
     email: user.email,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    is_active: user.is_active,
     phone_number: user.phone_number,
+    display_name: user.display_name,
+    avatar_url: user.avatar_url ?? null,
+    is_active: user.is_active,
     roles: user.roles,
     created_at: new Date(),
     updated_at: new Date(),
@@ -39,30 +38,32 @@ export const getUserById = async (id: string): Promise<UserSummary> => {
 export const createUser = async (
   userData: {
     email: string;
+    phone_number: string;
     password: string;
-    first_name: string;
-    last_name: string;
+    display_name?: string | null;
     is_active?: boolean;
-    phone_number?: string | null;
   },
   roleIds: string[] = []
 ): Promise<UserSummary> => {
-  const existing = await userRepository.findByEmail(userData.email);
-  if (existing) {
+  const existingEmail = await userRepository.findByEmail(userData.email);
+  if (existingEmail) {
     throw new ConflictError(`User with email '${userData.email}' already exists.`);
   }
 
+  const existingPhone = await userRepository.findByPhoneNumber(userData.phone_number);
+  if (existingPhone) {
+    throw new ConflictError(`User with phone number '${userData.phone_number}' already exists.`);
+  }
+
   const passwordHash = await hashPassword(userData.password);
-  const encryptedPhone = userData.phone_number ? encrypt(userData.phone_number) : null;
 
   const created = await userRepository.create(
     {
       email: userData.email,
+      phone_number: userData.phone_number?.trim() || null,
       password_hash: passwordHash,
-      first_name: userData.first_name,
-      last_name: userData.last_name,
+      display_name: userData.display_name,
       is_active: userData.is_active ?? true,
-      phone_number: encryptedPhone,
     },
     roleIds
   );
@@ -74,11 +75,10 @@ export const updateUser = async (
   id: string,
   userData: {
     email?: string;
+    phone_number?: string;
     password?: string;
-    first_name?: string;
-    last_name?: string;
+    display_name?: string | null;
     is_active?: boolean;
-    phone_number?: string | null;
   },
   roleIds?: string[]
 ): Promise<UserSummary> => {
@@ -94,19 +94,22 @@ export const updateUser = async (
     }
   }
 
+  if (userData.phone_number && userData.phone_number.trim() !== existing.phone_number) {
+    const phoneConflict = await userRepository.findByPhoneNumber(userData.phone_number.trim());
+    if (phoneConflict && phoneConflict.id !== id) {
+      throw new ConflictError(`Phone number '${userData.phone_number}' is already taken by another user.`);
+    }
+  }
+
   const updateData: userRepository.UpdateUserData = {
     email: userData.email,
-    first_name: userData.first_name,
-    last_name: userData.last_name,
+    phone_number: userData.phone_number !== undefined ? (userData.phone_number?.trim() || null) : undefined,
+    display_name: userData.display_name,
     is_active: userData.is_active,
   };
 
   if (userData.password) {
     updateData.password_hash = await hashPassword(userData.password);
-  }
-
-  if (userData.phone_number !== undefined) {
-    updateData.phone_number = userData.phone_number ? encrypt(userData.phone_number) : null;
   }
 
   const updated = await userRepository.update(id, updateData, roleIds);

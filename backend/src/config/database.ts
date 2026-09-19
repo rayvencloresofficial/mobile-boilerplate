@@ -3,7 +3,10 @@ import pg from 'pg';
 import { ENV } from './env.js';
 import type { Database } from '../types/database.js';
 
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+// Parse PostgreSQL DATE (OID 1082) as plain 'YYYY-MM-DD' string instead of JavaScript Date to avoid UTC timezone shifts
+types.setTypeParser(1082, (val: string) => val);
 
 // Sanitize any invalid PGPORT environment variable to prevent NaN errors
 if (process.env.PGPORT && isNaN(parseInt(process.env.PGPORT, 10))) {
@@ -54,10 +57,15 @@ const shouldUseSsl = (databaseUrl: string): boolean | { rejectUnauthorized: bool
 
 const normalizedDatabaseUrl = normalizeDatabaseUrl(ENV.DATABASE_URL);
 
+const defaultMaxConnections = ENV.NODE_ENV === 'production' ? 10 : 20;
+const poolMax = process.env.DB_POOL_MAX
+  ? parseInt(process.env.DB_POOL_MAX, 10)
+  : defaultMaxConnections;
+
 export const pool = new Pool({
   connectionString: normalizedDatabaseUrl,
-  max: 20, // Max concurrent client connections in pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30s
+  max: poolMax, // Max concurrent client connections in pool (tuned for serverless/production)
+  idleTimeoutMillis: 10000, // Close idle clients after 10s
   connectionTimeoutMillis: 5000, // Return an error after 5s if connection cannot be established
   ssl: shouldUseSsl(normalizedDatabaseUrl),
 });

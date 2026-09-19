@@ -11,6 +11,7 @@ export const errorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ): void => {
+  console.error('[API Error]:', err);
   let statusCode = 500;
   let type = 'https://httpstatuses.com/500';
   let title = 'Internal Server Error';

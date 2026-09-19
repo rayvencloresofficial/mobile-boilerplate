@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
-import { encrypt, decrypt } from '../utils/crypto.util.js';
 import {
   UnauthorizedError,
   ConflictError,
@@ -24,7 +23,6 @@ const REGULAR_USER_ROLE = 'user';
 
 const sanitizeUser = (user: AuthUser): AuthUser => ({
   ...user,
-  phone_number: user.phone_number ? decrypt(user.phone_number) : null,
 });
 
 export const hashPassword = async (password: string): Promise<string> => {
@@ -85,6 +83,10 @@ export const login = async (
     throw new UnauthorizedError('This account has been deactivated. Please contact support.');
   }
 
+  if (!user.password_hash) {
+    throw new UnauthorizedError('This account uses Firebase authentication and cannot sign in with a system password.');
+  }
+
   const isMatch = await verifyPassword(password, user.password_hash);
   if (!isMatch) {
     throw new UnauthorizedError('Invalid email or password.');
@@ -103,9 +105,7 @@ export const login = async (
 export const register = async (userData: {
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
-  phone_number?: string;
+  display_name: string;
 }): Promise<{ user: AuthUser; tokens: TokenPair }> => {
   const existing = await userRepository.findByEmail(userData.email);
   if (existing) {
@@ -117,16 +117,13 @@ export const register = async (userData: {
   const roleIds = defaultRole ? [defaultRole.id] : [];
 
   const passwordHash = await hashPassword(userData.password);
-  const encryptedPhone = userData.phone_number ? encrypt(userData.phone_number) : null;
 
   const createdUser = await userRepository.create(
     {
       email: userData.email,
       password_hash: passwordHash,
-      first_name: userData.first_name,
-      last_name: userData.last_name,
+      display_name: userData.display_name,
       is_active: true,
-      phone_number: encryptedPhone,
     },
     roleIds
   );
@@ -137,6 +134,70 @@ export const register = async (userData: {
   }
 
   const sanitized = sanitizeUser(fullUser);
+  const tokens = await generateTokenPair(sanitized);
+  return { user: sanitized, tokens };
+};
+
+export const syncFirebaseUser = async (userData: {
+  firebase_uid?: string | null;
+  email: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+}): Promise<{ user: AuthUser; tokens: TokenPair }> => {
+  const firebaseUid = userData.firebase_uid ?? null;
+  const email = userData.email.trim().toLowerCase();
+
+  if (!email) {
+    throw new ConflictError('Email is required to sync a Firebase account.');
+  }
+
+  const existingByEmail = await userRepository.findByEmail(email);
+  const existingByFirebase = firebaseUid ? await userRepository.getUserWithRolesAndPermissionsByFirebaseUid(firebaseUid) : null;
+
+  const targetUser = existingByFirebase ?? existingByEmail;
+
+  if (targetUser) {
+    await userRepository.update(
+      targetUser.id,
+      {
+        firebase_uid: firebaseUid ?? targetUser.firebase_uid,
+        email,
+        display_name: userData.display_name ?? targetUser.display_name,
+        avatar_url: userData.avatar_url ?? targetUser.avatar_url ?? null,
+        is_active: true,
+      }
+    );
+
+    const refreshedUser = await userRepository.getUserWithRolesAndPermissions(targetUser.id);
+    if (!refreshedUser) {
+      throw new NotFoundError('Synced user profile could not be loaded.');
+    }
+
+    const sanitized = sanitizeUser(refreshedUser);
+    const tokens = await generateTokenPair(sanitized);
+    return { user: sanitized, tokens };
+  }
+
+  const defaultRole = await roleRepository.findByName(REGULAR_USER_ROLE);
+  const roleIds = defaultRole ? [defaultRole.id] : [];
+
+  const createdUser = await userRepository.create(
+    {
+      firebase_uid: firebaseUid,
+      email,
+      display_name: userData.display_name ?? null,
+      avatar_url: userData.avatar_url ?? null,
+      is_active: true,
+    },
+    roleIds
+  );
+
+  const hydrated = await userRepository.getUserWithRolesAndPermissions(createdUser.id);
+  if (!hydrated) {
+    throw new NotFoundError('Firebase user created but failed to hydrate.');
+  }
+
+  const sanitized = sanitizeUser(hydrated);
   const tokens = await generateTokenPair(sanitized);
   return { user: sanitized, tokens };
 };
@@ -212,7 +273,7 @@ const getRoleColor = (role?: string): string => {
   }
 };
 
-const getRoleTitle = (roles: string[], firstName: string, lastName: string): string => {
+const getRoleTitle = (roles: string[], displayName: string | null): string => {
   if (roles.includes('super_admin')) return 'Super Admin';
   if (roles.includes('admin')) return 'Administrator';
   if (roles.includes('manager')) return 'Manager';
@@ -224,7 +285,7 @@ const getRoleTitle = (roles: string[], firstName: string, lastName: string): str
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
   }
-  return `${firstName} ${lastName}`.trim() || 'Staff User';
+  return displayName || 'Staff User';
 };
 
 /**
@@ -236,14 +297,13 @@ export const getDemoAccounts = async (): Promise<DemoAccountItem[]> => {
 
   return users.map((u) => ({
     id: u.id,
+    firebase_uid: u.firebase_uid,
     email: u.email,
-    first_name: u.first_name,
-    last_name: u.last_name,
+    display_name: u.display_name,
     is_active: u.is_active,
-    phone_number: u.phone_number ? decrypt(u.phone_number) : null,
     roles: u.roles,
     permissions: u.permissions,
-    title: getRoleTitle(u.roles, u.first_name, u.last_name),
+    title: getRoleTitle(u.roles, u.display_name),
     color: getRoleColor(u.roles[0]),
   }));
 };
@@ -298,4 +358,108 @@ export const demoLogin = async (
   const sanitized = sanitizeUser(fullUser);
   const tokens = await generateTokenPair(sanitized);
   return { user: sanitized, tokens };
+};
+
+export const updateProfile = async (
+  userId: string,
+  data: {
+    phone_number?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    middle_name?: string | null;
+    gender?: string | null;
+    nationality?: string | null;
+    date_of_birth?: string | null;
+  }
+): Promise<AuthUser> => {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new NotFoundError('User not found.');
+  }
+
+  const updateData: userRepository.UpdateUserData = {};
+  if (data.phone_number !== undefined) {
+    updateData.phone_number = data.phone_number && data.phone_number.trim() ? data.phone_number.trim() : null;
+  }
+  if (data.display_name !== undefined) {
+    updateData.display_name = data.display_name ? data.display_name.trim() : null;
+  }
+  if (data.avatar_url !== undefined) {
+    updateData.avatar_url = data.avatar_url ? data.avatar_url.trim() : null;
+  }
+  if (data.first_name !== undefined) {
+    updateData.first_name = data.first_name ? data.first_name.trim() : null;
+  }
+  if (data.last_name !== undefined) {
+    updateData.last_name = data.last_name ? data.last_name.trim() : null;
+  }
+  if (data.middle_name !== undefined) {
+    updateData.middle_name = data.middle_name ? data.middle_name.trim() : null;
+  }
+  if (data.gender !== undefined) {
+    updateData.gender = data.gender ? data.gender.trim() : null;
+  }
+  if (data.nationality !== undefined) {
+    updateData.nationality = data.nationality ? data.nationality.trim() : null;
+  }
+  if (data.date_of_birth !== undefined) {
+    updateData.date_of_birth = data.date_of_birth ? data.date_of_birth.trim() : null;
+  }
+
+  await userRepository.update(userId, updateData);
+
+  const fullUser = await userRepository.getUserWithRolesAndPermissions(userId);
+  if (!fullUser) {
+    throw new NotFoundError('User profile details not found.');
+  }
+
+  return sanitizeUser(fullUser);
+};
+
+export const changePassword = async (
+  userId: string,
+  currentPass: string | undefined | null,
+  newPass: string
+): Promise<void> => {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new NotFoundError('User account not found.');
+  }
+
+  const userWithPass = await userRepository.findByEmail(user.email);
+  if (!userWithPass) {
+    throw new NotFoundError('User account not found.');
+  }
+
+  // If user already has a password set, current password must match
+  if (userWithPass.password_hash) {
+    if (!currentPass) {
+      throw new UnauthorizedError('Current password is required to change password.');
+    }
+    const isMatch = await verifyPassword(currentPass, userWithPass.password_hash);
+    if (!isMatch) {
+      throw new UnauthorizedError('Current password is incorrect.');
+    }
+  }
+
+  const newHash = await hashPassword(newPass);
+  await userRepository.update(userId, { password_hash: newHash });
+};
+
+export const deleteAccount = async (userId: string): Promise<void> => {
+  const existing = await userRepository.findById(userId);
+  if (!existing) {
+    throw new NotFoundError('User account not found.');
+  }
+
+  // Revoke any tokens
+  await tokenRepository.revokeAllUserTokens(userId);
+
+  // Delete user record (cascades to profile, user_roles, refresh_tokens)
+  const deleted = await userRepository.deleteUser(userId);
+  if (!deleted) {
+    throw new NotFoundError('Failed to delete user account.');
+  }
 };

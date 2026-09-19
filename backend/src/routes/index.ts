@@ -1,25 +1,27 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes.js';
-import userRoutes from './user.routes.js';
-import roleRoutes from './role.routes.js';
-import permissionRoutes from './permission.routes.js';
-import rbacTestRoutes from './rbacTest.routes.js';
-import settingsRoutes from './settings.routes.js';
-import cryptoRoutes from './crypto.routes.js';
-import { db } from '../config/database.js';
 import { sql } from 'kysely';
+import { db } from '../config/database.js';
+import authRoutes from './auth.routes.js';
+import cryptoRoutes from './crypto.routes.js';
+import permissionRoutes from './permission.routes.js';
+import profileRoutes from './profile.routes.js';
+import rbacTestRoutes from './rbacTest.routes.js';
+import roleRoutes from './role.routes.js';
+import settingsRoutes from './settings.routes.js';
+import userRoutes from './user.routes.js';
 
 const router = Router();
 
 // Root API Endpoint
 router.get('/', (_req, res) => {
   res.status(200).json({
-    name: 'Admin Backend API',
+    name: 'Amaranth Residence Backend API',
     version: '1.0.0',
     status: 'ONLINE',
     endpoints: {
       health: '/api/v1/health',
       auth: '/api/v1/auth',
+      profile: '/api/v1/profile',
       users: '/api/v1/users',
       roles: '/api/v1/roles',
       permissions: '/api/v1/permissions',
@@ -52,6 +54,7 @@ router.get('/health', async (_req, res) => {
 
 // Mounted API sub-routers
 router.use('/auth', authRoutes);
+router.use('/profiles', profileRoutes);
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);
 router.use('/permissions', permissionRoutes);

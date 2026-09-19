@@ -34,9 +34,9 @@ export class ForbiddenError extends AppError {
   ) {
     const errorMap = details
       ? {
-          required: details.required ?? [],
-          actual: details.actual ?? [],
-        }
+        required: details.required ?? [],
+        actual: details.actual ?? [],
+      }
       : undefined;
     super(message, 403, 'https://httpstatuses.com/403', errorMap);
   }

@@ -34,21 +34,21 @@ router.get(
 
 router.post(
   '/',
-  requirePermission('settings:manage'),
+  requirePermission('settings:create'),
   validateRequest({ body: createSettingSchema }),
   settingsController.createSetting,
 );
 
 router.put(
   '/:key',
-  requirePermission('settings:manage'),
+  requirePermission('settings:update'),
   validateRequest({ params: settingKeyParamSchema, body: updateSettingSchema }),
   settingsController.updateSetting,
 );
 
 router.delete(
   '/:key',
-  requirePermission('settings:manage'),
+  requirePermission('settings:delete'),
   validateRequest({ params: settingKeyParamSchema }),
   settingsController.deleteSetting,
 );

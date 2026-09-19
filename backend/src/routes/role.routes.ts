@@ -11,8 +11,8 @@ router.use(authenticate);
 
 router.get('/', requirePermission('roles:read'), roleController.getRoles);
 router.get('/:id', requirePermission('roles:read'), validateRequest({ params: roleIdParamSchema }), roleController.getRoleById);
-router.post('/', requirePermission('roles:manage'), validateRequest({ body: createRoleSchema }), roleController.createRole);
-router.put('/:id', requirePermission('roles:manage'), validateRequest({ params: roleIdParamSchema, body: updateRoleSchema }), roleController.updateRole);
-router.delete('/:id', requirePermission('roles:manage'), validateRequest({ params: roleIdParamSchema }), roleController.deleteRole);
+router.post('/', requirePermission('roles:create'), validateRequest({ body: createRoleSchema }), roleController.createRole);
+router.put('/:id', requirePermission('roles:update'), validateRequest({ params: roleIdParamSchema, body: updateRoleSchema }), roleController.updateRole);
+router.delete('/:id', requirePermission('roles:delete'), validateRequest({ params: roleIdParamSchema }), roleController.deleteRole);
 
 export default router;

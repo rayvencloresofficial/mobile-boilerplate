@@ -76,9 +76,9 @@ export const testRolesManage = (req: AuthenticatedRequest, res: Response, next: 
   try {
     const response: ApiResponse<unknown> = {
       success: true,
-      message: "Access Granted: Role assignment permission 'roles:manage' confirmed.",
+      message: "Access Granted: Role update permission 'roles:update' confirmed.",
       data: {
-        permissionChecked: 'roles:manage',
+        permissionChecked: 'roles:update',
         authenticatedAs: req.user?.email,
         timestamp: new Date().toISOString(),
       },
@@ -93,9 +93,9 @@ export const testAnalyticsRead = (req: AuthenticatedRequest, res: Response, next
   try {
     const response: ApiResponse<unknown> = {
       success: true,
-      message: "Access Granted: Telemetry permission 'analytics:read' confirmed.",
+      message: "Access Granted: Financial report permission 'financial_report:read' confirmed.",
       data: {
-        permissionChecked: 'analytics:read',
+        permissionChecked: 'financial_report:read',
         authenticatedAs: req.user?.email,
         metrics: {
           activeSessions: 42,
@@ -183,9 +183,248 @@ export const testSettingsManage = (req: AuthenticatedRequest, res: Response, nex
   try {
     const response: ApiResponse<unknown> = {
       success: true,
-      message: "Access Granted: System mutation permission 'settings:manage' confirmed.",
+      message: "Access Granted: System mutation permission 'settings:update' confirmed.",
       data: {
-        permissionChecked: 'settings:manage',
+        permissionChecked: 'settings:update',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Residence Modules Test Endpoints
+export const testBusinessRead = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Business profile inspection permission 'business:read' confirmed.",
+      data: {
+        permissionChecked: 'business:read',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testBusinessManage = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Business mutation permission 'business:update' confirmed.",
+      data: {
+        permissionChecked: 'business:update',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testRoomsRead = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Rooms catalog inspection permission 'room:read' confirmed.",
+      data: {
+        permissionChecked: 'room:read',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testRoomsManage = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Room configuration permission 'room:update' confirmed.",
+      data: {
+        permissionChecked: 'room:update',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testAmenitiesRead = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Amenities catalog inspection permission 'amenity:read' confirmed.",
+      data: {
+        permissionChecked: 'amenity:read',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testAmenitiesManage = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Amenities configuration permission 'amenity:update' confirmed.",
+      data: {
+        permissionChecked: 'amenity:update',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testBookingsRead = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Bookings ledger inspection permission 'booking:read' confirmed.",
+      data: {
+        permissionChecked: 'booking:read',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testBookingsCreate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Bookings creation permission 'booking:create' confirmed.",
+      data: {
+        permissionChecked: 'booking:create',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testBookingsEdit = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Bookings mutation permission 'booking:update' confirmed.",
+      data: {
+        permissionChecked: 'booking:update',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testBookingsDelete = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Bookings deletion permission 'booking:delete' confirmed.",
+      data: {
+        permissionChecked: 'booking:delete',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testTransactionsRead = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Transactions ledger inspection permission 'transaction:read' confirmed.",
+      data: {
+        permissionChecked: 'transaction:read',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testTransactionsCreate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Financial transaction creation permission 'transaction:create' confirmed.",
+      data: {
+        permissionChecked: 'transaction:create',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testTransactionsEdit = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Financial transaction mutation permission 'transaction:update' confirmed.",
+      data: {
+        permissionChecked: 'transaction:update',
+        authenticatedAs: req.user?.email,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const testTransactionsDelete = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  try {
+    const response: ApiResponse<unknown> = {
+      success: true,
+      message: "Access Granted: Financial transaction deletion permission 'transaction:delete' confirmed.",
+      data: {
+        permissionChecked: 'transaction:delete',
         authenticatedAs: req.user?.email,
         timestamp: new Date().toISOString(),
       },

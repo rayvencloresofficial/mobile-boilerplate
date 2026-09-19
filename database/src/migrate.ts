@@ -14,11 +14,11 @@ export async function runMigrations(): Promise<void> {
     await ensureDatabaseExists();
   } catch (error: unknown) {
     const err = error as Error & { code?: string };
-    console.error(`\n❌ Failed to connect to PostgreSQL: ${err.message}`);
+    console.error(`\nFailed to connect to PostgreSQL: ${err.message}`);
     if (err.code === '28P01') {
-      console.error('👉 Hint: Authentication failed. Please check your PostgreSQL password in database/.env or backend/.env.');
+      console.error('Hint: Authentication failed. Please check your PostgreSQL password in database/.env or backend/.env.');
     } else if (err.code === 'ECONNREFUSED') {
-      console.error('👉 Hint: PostgreSQL service is not reachable on the configured host/port.');
+      console.error('Hint: PostgreSQL service is not reachable on the configured host/port.');
     }
     process.exit(1);
   }
@@ -61,14 +61,14 @@ export async function runMigrations(): Promise<void> {
       return;
     }
 
-    console.log(`🚀 Found ${pendingFiles.length} pending migration(s) to execute:\n`);
+    console.log(`Found ${pendingFiles.length} pending migration(s) to execute:\n`);
 
     for (const file of pendingFiles) {
       const filePath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(filePath, 'utf8');
 
       const startTime = Date.now();
-      process.stdout.write(`  ⏳ Executing ${file}... `);
+      process.stdout.write(`  Executing ${file}... `);
 
       await client.query('BEGIN');
       try {

@@ -106,6 +106,33 @@ export function decryptJson<T = unknown>(ciphertext: string, explicitKey?: strin
 }
 
 /**
+ * Computes a deterministic SHA-256 HMAC hash for blind index lookups.
+ */
+export function hashDeterministic(value: string | null | undefined, explicitKey?: string): string | null {
+  if (!value || typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  const keyBuffer = getKeyBuffer(explicitKey);
+  return crypto.createHmac('sha256', keyBuffer).update(normalized, 'utf8').digest('hex');
+}
+
+/**
+ * Encrypts an optional string, returning null if input is null/undefined.
+ */
+export function encryptOptional(value?: string | null, explicitKey?: string): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  return encrypt(value, explicitKey);
+}
+
+/**
+ * Decrypts an optional string, returning null if input is null/undefined.
+ */
+export function decryptOptional(ciphertext?: string | null, explicitKey?: string): string | null {
+  if (!ciphertext) return null;
+  return decrypt(ciphertext, explicitKey);
+}
+
+/**
  * Masks a sensitive string for safe display.
  */
 export function mask(value: string, visibleStart = 2, visibleEnd = 4): string {
@@ -117,3 +144,4 @@ export function mask(value: string, visibleStart = 2, visibleEnd = 4): string {
   const end = value.slice(-visibleEnd);
   return `${start}${'•'.repeat(Math.min(8, Math.max(4, value.length - visibleStart - visibleEnd)))}${end}`;
 }
+
